@@ -5,23 +5,27 @@ import StartScreen from './components/StartScreen';
 import Game from './components/Game';
 import GameOver from './components/GameOver';
 
+// Estágios do jogo
 const stages = [
   { id: 1, name: 'Start' },
   { id: 2, name: 'Game' },
   { id: 3, name: 'End' },
 ];
 
+// Quantidade de tentativas
 const guessesQty = 6;
 
+// Função para normalizar as letras (remover acentos)
 const normalizeLetter = (letter) => {
   return letter.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 };
 
+// Função principal
 function App() {
   const [gameStage, setGameStage] = useState(stages[0].name);
   const [words] = useState(wordsList);
 
-  // Zerando estados
+  // Estados para a palavra
   const [pickedWord, setPickedWord] = useState(''); // Palavra escolhida
   const [pickedCategory, setPickedCategory] = useState(''); // Categoria da palavra
   const [letters, setLetters] = useState([]); // Letras da palavra
@@ -35,56 +39,43 @@ function App() {
   const [score, setScore] = useState(0); // Pontuação
   const [scoreHistory, setScoreHistory] = useState([]); // Histórico de pontuações
 
-  // Função para adicionar a pontuação ao histórico
+  // Adicionar a pontuação ao histórico
   const addScoreToHistory = useCallback(() => {
     setScoreHistory((prevScoreHistory) => [...prevScoreHistory, score]);
   }, [score]);
 
-  const pickWordAndCategory = () => {
-    // Pegar uma categoria aleatória
-    const categories = Object.keys(words);
-    const category = categories[Math.floor(Math.random() * categories.length)];
-    console.log(category);
-
-    // Pegar uma palavra aleatória
-    const word = words[category][Math.floor(Math.random() * words[category].length)];
-    console.log(word);
+  // Escolher uma palavra e uma categoria aleatória
+  const pickWordAndCategory = useCallback(() => {
+    const categories = Object.keys(words); // Pegar as categorias
+    const category = categories[Math.floor(Math.random() * categories.length)]; // Escolher uma categoria aleatória
+    const word = words[category][Math.floor(Math.random() * words[category].length)]; // Escolher uma palavra aleatória
 
     return { word, category };
-  };
+  }, [words]);
 
-  // Start game
-  const startGame = () => {
-    // Zerar os estados
-    clearLettersStates();
-    // Pegar a palavra e a categoria
-    const { word, category } = pickWordAndCategory();
-
-    // Separar as letras da palavra
-    let wordLetters = word.split('');
-    // Transformar todas as letras em minúsculas
-    wordLetters = wordLetters.map((l) => l.toLowerCase());
-
-    console.log(word, category);
-    console.log(wordLetters);
+  // Iniciar o jogo
+  const startGame = useCallback(() => {
+    clearLettersStates(); // Limpar os estados das letras
+    const { word, category } = pickWordAndCategory(); // Escolher uma palavra e uma categoria aleatória
+    let wordLetters = word.split(''); // Separar as letras da palavra
+    wordLetters = wordLetters.map((l) => l.toLowerCase()); // Normalizar as letras
 
     // Atualizar os estados
     setPickedWord(word);
     setPickedCategory(category);
     setLetters(wordLetters);
-
     setGameStage(stages[1].name);
-  };
+  }, [pickWordAndCategory]);
 
-  // Game
+  // Verificar a letra
   const verifyLetter = (letter) => {
-    const normalizedLetter = normalizeLetter(letter.toLowerCase());
+    const normalizedLetter = normalizeLetter(letter.toLowerCase()); // Normalizar a letra
+
     // Verificar se a letra já foi escolhida
     if (guessedLetters.includes(normalizedLetter) || wrongLetters.includes(normalizedLetter)) {
       return;
     }
-
-    // Verificar se a letra está na palavra
+    // Verificar se a letra está correta ou errada
     if (letters.map(normalizeLetter).includes(normalizedLetter)) {
       setGuessedLetters((actualGuessedLetters) => [...actualGuessedLetters, normalizedLetter]);
     } else {
@@ -93,36 +84,40 @@ function App() {
     }
   };
 
+  // Limpar os estados das letras
   const clearLettersStates = () => {
     setGuessedLetters([]);
     setWrongLetters([]);
   };
 
-  // Verificar se o jogo acabou
+  // Verificar condições de derrota
   useEffect(() => {
     if (guesses <= 0) {
-      addScoreToHistory();
-      clearLettersStates();
-      setGameStage(stages[2].name);
+      addScoreToHistory(); // Adicionar a pontuação ao histórico
+      clearLettersStates(); // Limpar os estados das letras
+      setGameStage(stages[2].name); // Mudar o estágio do jogo
     }
-  }, [guesses, score]);
+  }, [guesses, score, addScoreToHistory]);
 
-  // verificar condições de vitoria
+  // Verificar condições de vitória
   useEffect(() => {
-    const uniqueLetters = [...new Set(letters.map(normalizeLetter))];
+    const uniqueLetters = [...new Set(letters.map(normalizeLetter))]; // Pegar as letras únicas da palavra
 
+    // Verificar se todas as letras únicas da palavra foram adivinhadas
     if (uniqueLetters.length === guessedLetters.length) {
-      // Aumentar a pontuação
-      setScore((actualScore) => (actualScore + 100));
-      startGame(); // Iniciar um novo jogo automaticamente após acertar a palavra anterior
+      // Verificar se o jogo está no estágio correto
+      if (gameStage === stages[1].name) {
+        setScore((prevScore) => prevScore + 100); // Adicionar 100 pontos à pontuação
+        startGame(); // Iniciar um novo jogo
+      }
     }
-  }, [guessedLetters, letters, startGame]);
+  }, [guessedLetters, letters, startGame, gameStage]);
 
-  // Resetar
+  // Reiniciar o jogo
   const retry = () => {
-    setScore(0);
-    setGuesses(guessesQty);
-    setGameStage(stages[0].name);
+    setScore(0); // Zerar a pontuação
+    setGuesses(guessesQty); // Reiniciar as tentativas
+    setGameStage(stages[0].name); // Mudar o estágio do jogo
   };
 
   return (

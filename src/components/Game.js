@@ -1,14 +1,22 @@
+import { useState, useRef, useEffect } from 'react';
 import './Game.css';
-import { useState, useRef } from 'react';
 
+// Função para normalizar a letra
 const normalizeLetter = (letter) => {
   return letter.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 };
 
+// Componente do jogo
 const Game = ({ verifyLetter, pickedWord, pickedCategory, letters, guessedLetters, wrongLetters, guesses, score }) => {
   const [letter, setLetter] = useState('');
   const letterInputRef = useRef(null);
 
+  // Efeito para focar no campo de entrada ao carregar o componente
+  useEffect(() => {
+    letterInputRef.current.focus();
+  }, []);
+
+  // Função para lidar com o envio do formulário
   const handleSubmit = (e) => {
     e.preventDefault();
     verifyLetter(letter);
