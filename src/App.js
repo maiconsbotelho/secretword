@@ -113,7 +113,7 @@ function App() {
 
     if (uniqueLetters.length === guessedLetters.length) {
       // Aumentar a pontuação
-      setScore((actualScore) => (actualScore += 100));
+      setScore((actualScore) => (actualScore + 100));
       startGame(); // Iniciar um novo jogo automaticamente após acertar a palavra anterior
     }
   }, [guessedLetters, letters, startGame]);
