@@ -1,6 +1,10 @@
 import './Game.css';
 import { useState, useRef } from 'react';
 
+const normalizeLetter = (letter) => {
+  return letter.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+};
+
 const Game = ({ verifyLetter, pickedWord, pickedCategory, letters, guessedLetters, wrongLetters, guesses, score }) => {
   const [letter, setLetter] = useState('');
   const letterInputRef = useRef(null);
@@ -24,7 +28,7 @@ const Game = ({ verifyLetter, pickedWord, pickedCategory, letters, guessedLetter
       <p>Você ainda tem {guesses} tentativa(s).</p>
       <div className="wordContainer">
         {letters.map((letter, index) =>
-          guessedLetters.includes(letter) ? (
+          guessedLetters.includes(normalizeLetter(letter)) ? (
             <span key={index} className="letter">
               {letter}
             </span>

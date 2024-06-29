@@ -1,13 +1,6 @@
-// CSS
 import './App.css';
-
-// React
 import { useCallback, useEffect, useState } from 'react';
-
-// Data
 import { wordsList } from './data/words';
-
-// Components
 import StartScreen from './components/StartScreen';
 import Game from './components/Game';
 import GameOver from './components/GameOver';
@@ -19,6 +12,10 @@ const stages = [
 ];
 
 const guessesQty = 6;
+
+const normalizeLetter = (letter) => {
+  return letter.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+};
 
 function App() {
   const [gameStage, setGameStage] = useState(stages[0].name);
@@ -33,7 +30,15 @@ function App() {
   const [guessedLetters, setGuessedLetters] = useState([]); // Letras corretas
   const [wrongLetters, setWrongLetters] = useState([]); // Letras erradas
   const [guesses, setGuesses] = useState(guessesQty); // Número de tentativas
+
+  // Estados para a pontuação
   const [score, setScore] = useState(0); // Pontuação
+  const [scoreHistory, setScoreHistory] = useState([]); // Histórico de pontuações
+
+  // Função para adicionar a pontuação ao histórico
+  const addScoreToHistory = useCallback(() => {
+    setScoreHistory((prevScoreHistory) => [...prevScoreHistory, score]);
+  }, [score]);
 
   const pickWordAndCategory = () => {
     // Pegar uma categoria aleatória
@@ -73,14 +78,14 @@ function App() {
 
   // Game
   const verifyLetter = (letter) => {
-    const normalizedLetter = letter.toLowerCase();
+    const normalizedLetter = normalizeLetter(letter.toLowerCase());
     // Verificar se a letra já foi escolhida
     if (guessedLetters.includes(normalizedLetter) || wrongLetters.includes(normalizedLetter)) {
       return;
     }
 
     // Verificar se a letra está na palavra
-    if (letters.includes(normalizedLetter)) {
+    if (letters.map(normalizeLetter).includes(normalizedLetter)) {
       setGuessedLetters((actualGuessedLetters) => [...actualGuessedLetters, normalizedLetter]);
     } else {
       setWrongLetters((actualWrongLetters) => [...actualWrongLetters, normalizedLetter]);
@@ -96,14 +101,15 @@ function App() {
   // Verificar se o jogo acabou
   useEffect(() => {
     if (guesses <= 0) {
+      addScoreToHistory();
       clearLettersStates();
       setGameStage(stages[2].name);
     }
-  }, [guesses]);
+  }, [guesses, score]);
 
   // verificar condições de vitoria
   useEffect(() => {
-    const uniqueLetters = [...new Set(letters)];
+    const uniqueLetters = [...new Set(letters.map(normalizeLetter))];
 
     if (uniqueLetters.length === guessedLetters.length) {
       // Aumentar a pontuação
@@ -134,7 +140,7 @@ function App() {
           score={score}
         />
       )}
-      {gameStage === 'End' && <GameOver retry={retry} score={score} />}
+      {gameStage === 'End' && <GameOver retry={retry} score={score} scoreHistory={scoreHistory} />}
     </div>
   );
 }
